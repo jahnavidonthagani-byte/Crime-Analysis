@@ -1,0 +1,90 @@
+This project is a Crime Analysis Dashboard built using Streamlit and Python.
+It analyzes and visualizes crime data across different cities to identify patterns and trends.
+The dashboard includes interactive charts, city-level analytics, and an AI-powered section that gives insights using a Random Forest model.
+It helps understand crime distribution, victim details, and high-risk areas in a simple and visual way.
+
+🚀 Key Features
+
+->Interactive Dashboard
+
+Visualizes total crimes, high-risk cities, and crime trends.
+
+City-level analytics (top & lowest crime cities, weapon usage, etc.)
+
+Monthly crime trend visualization with dynamic bar charts.
+
+->Crime Type Distribution
+
+Pie chart showing major crime categories with clear labels and spacing.
+
+->Victim Demographics
+
+Gender distribution bar chart for understanding victim statistics.
+
+->Top & Low Crime Cities
+
+Side-by-side horizontal bar charts of top 5 and bottom 5 cities by crime volume.
+
+->Weapon Usage Frequency
+
+Displays most commonly used weapons with counts.
+
+->AI-Powered Knowledge Section
+
+Query-based insights using text input (e.g., “Highest crime city”, “Show crimes in Delhi 2023”).
+
+Uses a Random Forest Classifier to demonstrate machine learning integration.
+
+Intelligent city insights and comparison queries.
+
+->Crime Records Explorer
+
+View full cleaned dataset interactively in Streamlit.
+
+Download crime data as a CSV file.
+
+->Automatic Data Cleaning
+
+Handles missing values, date conversions, and column trimming.
+
+Generates a cleaned CSV (crime_dataset_india_clean.csv) automatically.
+
+->Modern UI
+
+Streamlit-based responsive layout with styled panels.
+
+Sidebar navigation and logo integration.
+
+⚙️ Installation & Setup Instructions
+🪶 1. Prerequisites
+
+Python 3.8+ installed on your system
+
+Pip (Python package manager)
+
+📦 2. Install Required Python Packages
+pip install streamlit pandas matplotlib numpy scikit-learn pillow
+
+📁 3. Project Folder Structure
+📂 Logistic Regression
+ ┣ 📂 knowledge
+ ┃ ┣ crime_dataset_india.csv
+ ┃ ┣ Logo_TechOptima_update 1.png
+ ┃ ┗ pred_crime_app.py   ← (This Streamlit app file)
+
+▶️ 4. How to Run the App
+cd "C:\Users\dkavy\OneDrive\Desktop\Logistic Regression\knowledge"
+streamlit run pred_crime_app.py
+
+👇
+
+📄 requirements.txt
+streamlit==1.38.0
+pandas==2.2.2
+matplotlib==3.9.2
+numpy==1.26.4
+scikit-learn==1.5.1
+Pillow==10.4.0
+textwrap3==0.9.2
+pip install -r requirements.txt
+

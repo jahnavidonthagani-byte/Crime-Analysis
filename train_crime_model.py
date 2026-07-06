@@ -76,3 +76,6 @@ importance = model.feature_importances_
 print("\n🔍 Feature Importance:")
 for i, col in enumerate(feature_columns):
     print(f"{col}: {importance[i]:.4f}")
+
+
+

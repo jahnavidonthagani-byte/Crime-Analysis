@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
-import numpy as np
+#import numpy as np
 from PIL import Image
 #import os
 import random
@@ -20,7 +20,6 @@ matplotlib.use('Agg')
 
 # Paths
 script_dir = Path(__file__).parent.resolve()
-#logo_path = script_dir / "images" / "Logo_TechOptima.png"
 raw_path = script_dir / "crime_dataset_india.csv"
 clean_path = script_dir / "crime_dataset_india_clean.csv"
 
@@ -64,18 +63,13 @@ if 'Date Reported' in df.columns:
 st.set_page_config(page_title="CrimeAnalysis", layout="wide")
 
 with st.sidebar:
-    #st.title("Crime Analytics")
-    # try:
-    #     if os.path.exists(str(logo_path)):
-    #         st.markdown(load_image_base64(logo_path), unsafe_allow_html=True)
-    #     else:
-    #         st.warning(f"Logo file not found at {logo_path}")
-    # except Exception as e:
-    #     st.warning(f"Could not load logo: {e}")
-
     page = st.radio("Select Section:", ["Dashboard", "Knowledge", "Crime Records"])
 
+# Global city summary tracking data logic
 city_summary = {}
+city_counts_all = df['City'].value_counts()
+median_crime_all = city_counts_all.median()
+
 for city in df['City'].dropna().unique():
     city_data = df[df['City'] == city]
     city_summary[city.lower()] = {
@@ -98,13 +92,12 @@ def compose_city_overview(city_name, data, full=False):
             response += f"- Victim gender distribution: {data['gender_ratio']}\n"
         if data['avg_age'] is not None:
             response += f"- Average victim age: {data['avg_age']:.1f} years\n"
-        avg_crime = np.mean([c['total_crimes'] for c in city_summary.values()])
-        if data['total_crimes'] > avg_crime * 1.2:
-            risk_level = "High "
-        elif data['total_crimes'] > avg_crime * 0.8:
-            risk_level = "Medium "
+        
+        # Consistent with the dashboard's middle-ground median logic
+        if data['total_crimes'] > median_crime_all:
+            risk_level = "High Risk (Above Median)"
         else:
-            risk_level = "Low "
+            risk_level = "Low Risk (Below Median)"
         response += f"- Crime risk level: {risk_level}\n"
         response += random.choice([
             "Citizens should stay alert and follow safety guidelines.",
@@ -188,7 +181,6 @@ def autopct_format(pct, allvals):
     return "{:.1f}%".format(pct)
 
 def render_matplotlib_figure(fig):
-    """Render matplotlib figure with fallback to avoid Streamlit image width errors."""
     try:
         plt.tight_layout()
         fig.canvas.draw()
@@ -199,20 +191,25 @@ def render_matplotlib_figure(fig):
         buf.seek(0)
         st.image(buf, use_column_width=True)
 
+# --- PAGES SECTION ---
 if page == "Dashboard":
-    # Centered Main Title
     st.markdown("<h1 style='text-align: center;'>CRIME ANALYSIS</h1>", unsafe_allow_html=True)
     st.subheader("Intelligent Insights & City-Wise Crime Trends")
     st.write("Empowering Safer Cities Through Data-Driven Crime Insights")
 
-    # Data Processing
-    total_cities = df['City'].nunique()
-    total_crimes = len(df)
-    avg_crime_count = df.groupby('City').size().mean()
-    high_risk_cities = len(df.groupby('City').filter(lambda x: len(x) > avg_crime_count)['City'].unique())
-    safe_cities = total_cities - high_risk_cities
+    # ---- FIXED AND VERIFIED DATASET METRICS ----
+    total_cities = int(df['City'].nunique())
+    total_crimes = int(len(df))
+    
+    # Generate true calculations directly off your CSV layout
+    city_counts = df['City'].value_counts()
+    median_benchmark = city_counts.median()
+    
+    # Calculate exact splits
+    high_risk_cities = int(len(city_counts[city_counts > median_benchmark]))
+    safe_cities = int(total_cities - high_risk_cities)
 
-    # Metric Cards Layout with dark text for clear visibility
+    # Metric Cards Layout with fixed dark visible colors
     st.markdown(f"""
     <div style='display:flex; gap:20px; flex-wrap:wrap; margin-bottom: 30px;'>
         <div style='background:#e3f2fd; padding:15px; border-radius:10px; flex:1; text-align:center;'>
@@ -233,15 +230,14 @@ if page == "Dashboard":
         </div>
     </div>
     """, unsafe_allow_html=True)
+    
     col1, col2 = st.columns(2)
-
     with col1:
         st.markdown("<h4 style='text-align:center; margin-bottom:15px;'>Crime Type Distribution</h4>", unsafe_allow_html=True)
         if 'Crime Description' in df.columns:
             crime_counts = df['Crime Description'].value_counts().head(10)
             fig, ax = plt.subplots(figsize=(6, 6))
             labels = [textwrap.fill(label, 14) for label in crime_counts.index]
-
             wedges, texts, autotexts = ax.pie(
                 crime_counts.values,
                 labels=labels,
@@ -253,15 +249,12 @@ if page == "Dashboard":
                 textprops={'fontsize': 9},
                 rotatelabels=True
             )
-
             for i, text in enumerate(texts):
                 x, y = text.get_position()
                 offset = 0.02 if i % 2 == 0 else -0.02
                 text.set_position((x, y + offset))
-
             ax.axis('equal')
             render_matplotlib_figure(fig)
-
         st.markdown("<br>", unsafe_allow_html=True)
 
     with col2:
@@ -277,7 +270,6 @@ if page == "Dashboard":
         st.markdown("<br>", unsafe_allow_html=True)
 
     col3, col4 = st.columns(2)
-
     with col3:
         st.markdown("<h4 style='text-align:center; margin-bottom:15px;'>Top 5 Cities by Crime</h4>", unsafe_allow_html=True)
         top_cities = df['City'].value_counts().head(5)
@@ -303,12 +295,10 @@ if page == "Dashboard":
         weapon_counts = df['Weapon Used'].value_counts().head(8)
         fig, ax = plt.subplots(figsize=(5, 3))
         bars = ax.bar(weapon_counts.index, weapon_counts.values, color='#26a69a')
-
         for bar in bars:
             height = bar.get_height()
             ax.text(bar.get_x() + bar.get_width() / 2, height + 0.3, f'{int(height)}',
                     ha='center', va='bottom', fontsize=6)
-
         ax.set_xlabel("Weapon", fontsize=6)
         ax.set_ylabel("Count", fontsize=6)
         plt.xticks(rotation=40, fontsize=6)
@@ -316,7 +306,6 @@ if page == "Dashboard":
         render_matplotlib_figure(fig)
 
     st.markdown("<br>", unsafe_allow_html=True)
-
     st.markdown("<h4 style='text-align:center; margin-bottom:15px;'>Monthly Crime Trend</h4>", unsafe_allow_html=True)
     if 'YearMonth' in df.columns:
         monthly_crime = df.groupby('YearMonth').size().reset_index(name='Crime Count')
@@ -333,29 +322,45 @@ if page == "Dashboard":
 elif page == "Knowledge":
     main_col, right_col = st.columns([3, 1])
     with main_col:
-        st.title(" CrimeAnalysis")
+        #st.title(" CrimeAnalysis")
         st.subheader("Intelligent Insights & City-Wise Crime Trends")
         st.write("Empowering Safer Cities Through Data-Driven Crime Insights")
+        
         if 'City' in df.columns and 'Victim Gender' in df.columns:
-            X = pd.get_dummies(df[["City", "Victim Gender"]], drop_first=True)
-            y = pd.Series([1 if city_summary[c.lower()]['total_crimes'] > np.mean(
-                [city_summary[x]['total_crimes'] for x in city_summary]) else 0 for c in df['City']])
+            # 1. Drop missing values to prevent encoding errors
+            df_ml = df.dropna(subset=['City', 'Victim Gender']).copy()
+            
+            # 2. Features (X)
+            X = pd.get_dummies(df_ml[["City", "Victim Gender"]], drop_first=True)
+            
+            # 3. Target (y): Check against the pre-calculated median_benchmark map safely
+            city_counts = df_ml['City'].value_counts()
+            median_benchmark = city_counts.median()
+            high_risk_cities_list = city_counts[city_counts > median_benchmark].index.tolist()
+            
+            y = df_ml['City'].isin(high_risk_cities_list).astype(int)
+            
+            # 4. Train Model
             X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4, random_state=42)
             model = RandomForestClassifier(random_state=42)
             model.fit(X_train, y_train)
             acc = accuracy_score(y_test, model.predict(X_test))
-            st.markdown("###  AI & ML Integration")
+            
+            st.markdown("### AI & ML Integration")
             st.write("**Model Used:** Random Forest Classifier")
             st.write(f"**Model Accuracy:** {acc:.2f}")
+            
         if "answer" not in st.session_state:
             st.session_state.answer = ""
+            
         def submit_query():
             st.session_state.answer = generate_response(st.session_state.query_input)
             st.session_state.query_input = ""
+            
         query = st.text_input("Type your question here:", key="query_input", on_change=submit_query)
 
         if st.session_state.answer:
-            st.markdown("###  Answer to Your Question")
+            st.markdown("### Answer to Your Question")
             st.write(st.session_state.answer)
     with right_col:
         st.markdown("### About the Platform")
@@ -371,7 +376,6 @@ elif page == "Knowledge":
         st.markdown("- Most used weapon in Hyderabad")
         st.markdown("- How many fraud cases in Mumbai")
         st.markdown("- Show crimes in Delhi 2023")
-        st.markdown("- Compare Delhi and Mumbai 2023")
 
 elif page == "Crime Records":
     st.title(" Crime Records Database")
